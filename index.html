@@ -46,33 +46,37 @@
             <p class="text-muted m-0">Noch keine Daten ☁️</p>
           </div>
 
-          <hr class="my-5">
-          <div class="row justify-content-center">
-            <!-- d) Tankstellen -->
-            <div class="col-md-5 mb-4">
-              <h2 class="mb-3 text-center">Strom-Tankstellen in der Nähe (Winterthur)</h2>
-              <button id="btn-stations" class="btn btn-success mb-3 w-100">Tankstellen anzeigen</button>
-              <div id="stationBox"
-                class="d-flex flex-column justify-content-start align-items-center mx-auto border rounded shadow p-3"
-                style="width: 100%; min-height: 300px; background-color: #f1fff3; overflow-y: auto;">
-                <p class="text-muted m-0 text-center">Noch keine Daten ⚡</p>
-              </div>
-            </div>
+          <!-- === d) Strom-Tankstellen + e) Karte (ersetzen) === -->
+<hr class="my-5">
 
-            <!-- e) Karte -->
-            <div class="col-md-5 mb-4">
-              <h2 class="mb-3 text-center">Karte der Schweiz</h2>
-               <!-- Suchfeld -->
-                <div class="input-group mb-3">
-                  <input type="text" id="mapSearch" class="form-control" placeholder="Ort oder Adresse suchen...">
-                  <button id="btnSearch" class="btn btn-outline-secondary">Suchen</button>
-                </div>
-              <div id="mapBox"
-                class="mx-auto border rounded shadow"
-                style="width: 100%; height: 400px;">
-              </div>
-            </div>
-          </div>
+<div class="container">
+  <div class="row g-4">
+    <!-- links: Liste -->
+    <div class="col-md-5">
+      <h3 class="mb-3 text-center">⚡ Nähe (Winterthur)</h3>
+      <button id="btn-stations" class="btn btn-primary w-100 mb-3">Tankstellen laden</button>
+
+      <div id="stationList" class="list-group" style="max-height:420px; overflow:auto;">
+        <div class="list-group-item text-center text-muted">Noch keine Daten</div>
+      </div>
+    </div>
+
+    <!-- rechts: Suche + Karte -->
+    <div class="col-md-7">
+      <h3 class="mb-3 text-center">🗺 Karte & Suche</h3>
+
+      <div class="input-group mb-2">
+        <input id="searchInput" type="search" class="form-control" placeholder="Ort oder Adresse suchen...">
+        <button id="searchBtn" class="btn btn-outline-secondary">Suchen</button>
+      </div>
+
+      <ul id="autocomplete" class="list-group mb-2" style="display:none; max-height:160px; overflow:auto; position:relative; z-index:1100;"></ul>
+
+      <div id="mapBox" style="width:100%; height:480px; border-radius:8px; overflow:hidden; border:1px solid #ddd;"></div>
+    </div>
+  </div>
+</div>
+
 
 
           <!-- Hover Effekt (nur kleiner Zoom) -->

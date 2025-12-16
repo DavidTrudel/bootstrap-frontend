@@ -80,17 +80,30 @@ btnWeather.addEventListener("click", async () => {
 
 
 
-// --- Winterthur Koordinaten (Referenzpunkt) ---
+// ===============================
+// d + e) Tankstellen + Karte
+// ===============================
+
 const WINT_LAT = 47.4988;
 const WINT_LON = 8.7237;
 
-// --- Leaflet Loader ---
+const btnStations = document.getElementById("btn-stations");
+const stationList = document.getElementById("stationList");
+const mapBox = document.getElementById("mapBox");
+
+let map;
+let markers = [];
+
+// -------------------------------
+// Leaflet Loader
 async function loadLeaflet() {
   if (window.L) return;
+
   const css = document.createElement("link");
   css.rel = "stylesheet";
   css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
   document.head.appendChild(css);
+
   await new Promise(res => {
     const s = document.createElement("script");
     s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
@@ -99,160 +112,143 @@ async function loadLeaflet() {
   });
 }
 
-// --- Helper: lesbaren Namen finden ---
-function pickReadableName(st) {
-  const names = st.ChargingStationNames || st.ChargingStationName || [];
-  if (Array.isArray(names)) {
-    for (const n of names) {
-      if (n?.name && n.name.length > 2 && /[a-zA-Z]/.test(n.name)) return n.name.trim();
-      if (typeof n === "string" && n.length > 2) return n.trim();
-    }
-  }
-  const addr = st.Address || {};
-  if (addr.Street && addr.City) return `${addr.Street}, ${addr.City}`;
-  return "Unbekannt";
-}
-
-// --- Helper: Koordinaten finden ---
-function parseGeoCoordinates(st) {
-  const s = st.GeoCoordinates?.Google ?? "";
-  if (typeof s === "string" && s.includes(" ")) {
-    const [a, b] = s.split(" ").map(parseFloat);
-    if (!isNaN(a) && !isNaN(b)) {
-      return a > b ? { lat: b, lon: a } : { lat: a, lon: b };
-    }
-  }
-  return null;
-}
-
-// --- Map state ---
-let myMap = null;
-let searchMarker = null;
-
-// --- Tankstellen laden ---
-document.getElementById("btn-stations").addEventListener("click", async () => {
-  const stationBox = document.getElementById("stationBox");
-  stationBox.innerHTML = "<p class='text-muted text-center'>Lade Daten...</p>";
-
-  try {
-    const resp = await fetch("https://data.geo.admin.ch/ch.bfe.ladestellen-elektromobilitaet/data/ch.bfe.ladestellen-elektromobilitaet.json");
-    const json = await resp.json();
-    const records = json.EVSEData?.[0]?.EVSEDataRecord || [];
-
-    const parsed = records.map(r => {
-      const geo = parseGeoCoordinates(r);
-      const addr = r.Address || {};
-      return {
-        name: pickReadableName(r),
-        address: addr.Street || "-",
-        zip: addr.PostalCode || "-",
-        city: addr.City || "-",
-        lat: geo?.lat ?? null,
-        lon: geo?.lon ?? null
-      };
-    }).filter(p => p.lat && p.lon);
-
-    // Doppelte entfernen
-    const seen = new Set();
-    const unique = parsed.filter(p => {
-      const key = `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-
-    // Distanz zu Winterthur
-    const hav = (lat1, lon1, lat2, lon2) => {
-      const R = 6371;
-      const toRad = d => d * Math.PI / 180;
-      const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
-      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    };
-
-    const top5 = unique.map(u => ({ ...u, dist: hav(WINT_LAT, WINT_LON, u.lat, u.lon) }))
-                      .sort((a,b) => a.dist - b.dist)
-                      .slice(0,5);
-
-    // Karte initialisieren
-    if (!myMap) {
-      await loadLeaflet();
-      myMap = L.map("mapBox").setView([WINT_LAT, WINT_LON], 14);
-      L.tileLayer(
-        "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg",
-        { maxZoom: 18, attribution: "© swisstopo" }
-      ).addTo(myMap);
-      L.circleMarker([WINT_LAT, WINT_LON], { radius: 7, color: "red", fillColor: "red", fillOpacity: 0.8 })
-        .addTo(myMap)
-        .bindPopup("Referenzpunkt: Winterthur");
-    }
-
-    // Vorherige Marker löschen (ausser Referenz)
-    myMap.eachLayer(layer => {
-      if (layer instanceof L.Marker && !layer._popup?.getContent()?.includes("Referenzpunkt")) {
-        myMap.removeLayer(layer);
-      }
-    });
-
-    // Buttons & Marker
-    stationBox.innerHTML = "";
-    top5.forEach(s => {
-      const marker = L.marker([s.lat, s.lon]).addTo(myMap)
-        .bindPopup(`<b>${s.name}</b><br>${s.address}, ${s.zip} ${s.city}<br><small>${s.dist.toFixed(2)} km</small>`);
-
-      const btn = document.createElement("button");
-      btn.className = "station-btn btn btn-light w-100 text-start mb-2 border";
-      btn.innerHTML = `<b>${s.name}</b><br>${s.address}, ${s.zip} ${s.city} <small class="text-muted">(${s.dist.toFixed(2)} km)</small>`;
-
-      btn.addEventListener("click", () => {
-        myMap.setView([s.lat, s.lon], 16);
-        marker.openPopup();
-        document.querySelectorAll(".station-btn").forEach(b => b.classList.remove("btn-success"));
-        btn.classList.add("btn-success");
-      });
-
-      btn.addEventListener("mouseenter", () => marker.openPopup());
-      btn.addEventListener("mouseleave", () => marker.closePopup());
-
-      stationBox.appendChild(btn);
-    });
-  } catch (e) {
-    console.error(e);
-    stationBox.innerHTML = "<p class='text-danger text-center'>Fehler beim Laden.</p>";
-  }
-});
-
-// --- Suchfunktion auf Karte ---
-document.getElementById("btnSearch").addEventListener("click", async () => {
-  const query = document.getElementById("mapSearch").value.trim();
-  if (!query) return;
+// -------------------------------
+// Init Map
+async function initMap() {
+  if (map) return;
 
   await loadLeaflet();
-  if (!myMap) {
-    myMap = L.map("mapBox").setView([WINT_LAT, WINT_LON], 14);
-    L.tileLayer(
-      "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg",
-      { maxZoom: 18, attribution: "© swisstopo" }
-    ).addTo(myMap);
-  }
 
-  const resp = await fetch(`https://api3.geo.admin.ch/rest/services/api/SearchServer?searchText=${encodeURIComponent(query)}&type=locations`);
-  const data = await resp.json();
-  if (data.results && data.results.length > 0) {
-    const r = data.results[0];
-    const [lon, lat] = r.attrs.latlon.split(",").map(parseFloat);
+  map = L.map("mapBox").setView([WINT_LAT, WINT_LON], 14);
 
-    if (!isNaN(lat) && !isNaN(lon)) {
-      myMap.setView([lat, lon], 15);
-      if (searchMarker) myMap.removeLayer(searchMarker);
-      searchMarker = L.marker([lat, lon], { icon: L.icon({
-        iconUrl: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
-        iconSize: [28, 28],
-        iconAnchor: [14, 28],
-        popupAnchor: [0, -28]
-      })}).addTo(myMap).bindPopup(`📍 <b>${r.attrs.label}</b>`).openPopup();
+  L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+      maxZoom: 19,
+      attribution: "Leaflet | © OpenStreetMap contributors"
     }
-  } else {
-    alert("Kein Ort gefunden.");
+  ).addTo(map);
+
+  // Referenzpunkt Winterthur
+  L.circleMarker([WINT_LAT, WINT_LON], {
+    radius: 7,
+    color: "red",
+    fillOpacity: 1
+  }).addTo(map).bindPopup("Winterthur");
+}
+
+// -------------------------------
+// Distanz (Haversine)
+function distanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// -------------------------------
+// Lade Tankstellen
+btnStations.addEventListener("click", async () => {
+  stationList.innerHTML =
+    `<div class="list-group-item text-muted text-center">Lade…</div>`;
+
+  await initMap();
+
+  try {
+    const res = await fetch(
+      "https://data.geo.admin.ch/ch.bfe.ladestellen-elektromobilitaet/data/ch.bfe.ladestellen-elektromobilitaet.json"
+    );
+    const json = await res.json();
+
+    // ✅ KORREKT
+    const records = json.EVSEData[0].EVSEDataRecord;
+
+    const stations = [];
+    const used = new Set();
+
+    records.forEach(r => {
+      if (!r.GeoCoordinates?.Google) return;
+
+      const [lat, lon] = r.GeoCoordinates.Google.split(" ").map(Number);
+      if (isNaN(lat) || isNaN(lon)) return;
+
+      const addr = r.Address;
+      if (!addr) return;
+
+      const key = `${addr.Street}-${addr.HouseNum}-${addr.PostalCode}`;
+      if (used.has(key)) return;
+      used.add(key);
+
+      const name =
+        r.ChargingStationNames?.[0]?.value ||
+        r.ChargingStationId ||
+        "Ladestation";
+
+      stations.push({
+        name,
+        lat,
+        lon,
+        address: `${addr.Street} ${addr.HouseNum}`,
+        plz: addr.PostalCode,
+        city: addr.City,
+        dist: distanceKm(WINT_LAT, WINT_LON, lat, lon)
+      });
+    });
+
+    const top5 = stations
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, 5);
+
+    // Cleanup
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    stationList.innerHTML = "";
+
+    top5.forEach(s => {
+      const marker = L.marker([s.lat, s.lon])
+        .addTo(map)
+        .bindPopup(
+          `<strong>${s.name}</strong><br>
+           ${s.address}<br>
+           ${s.plz} ${s.city}<br>
+           ${s.dist.toFixed(2)} km`
+        );
+
+      markers.push(marker);
+
+      const btn = document.createElement("button");
+      btn.className = "list-group-item list-group-item-action";
+      btn.innerHTML = `
+        <strong>${s.name}</strong><br>
+        ${s.address}, ${s.plz} ${s.city}<br>
+        <small>(${s.dist.toFixed(2)} km)</small>
+      `;
+
+      btn.onclick = () => {
+        map.setView([s.lat, s.lon], 16);
+        marker.openPopup();
+      };
+
+      btn.onmouseenter = () => marker.openPopup();
+      btn.onmouseleave = () => marker.closePopup();
+
+      stationList.appendChild(btn);
+    });
+
+    // Zoom auf alles
+    const group = L.featureGroup(markers);
+    map.fitBounds(group.getBounds().pad(0.3));
+
+  } catch (e) {
+    console.error(e);
+    stationList.innerHTML =
+      `<div class="list-group-item text-danger text-center">
+        Fehler beim Laden
+       </div>`;
   }
 });
