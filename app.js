@@ -15,7 +15,7 @@ btn.addEventListener("click", async () => {
     box.appendChild(img);
   } catch (e) {
     console.error(e);
-    box.innerHTML = "<p class='text-danger'>Fehler beim Laden 😿</p>";
+    box.innerHTML = "<p class='text-danger'>Fehler beim Laden</p>";
   }
 });
 
@@ -29,11 +29,11 @@ btnBtc.addEventListener("click", async () => {
     const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,chf");
     const data = await res.json();
     btcBox.innerHTML = `
-      <p class="fw-bold text-dark m-1">💵 ${data.bitcoin.usd.toLocaleString()} USD</p>
-      <p class="fw-bold text-dark m-1">🇨🇭 ${data.bitcoin.chf.toLocaleString()} CHF</p>
+      <p class="fw-bold text-dark m-1">${data.bitcoin.usd.toLocaleString()} USD</p>
+      <p class="fw-bold text-dark m-1">${data.bitcoin.chf.toLocaleString()} CHF</p>
     `;
   } catch {
-    btcBox.innerHTML = "<p class='text-danger'>Fehler beim Laden 😿</p>";
+    btcBox.innerHTML = "<p class='text-danger'>Fehler beim Laden</p>";
   }
 });
 
@@ -52,12 +52,12 @@ btnWeather.addEventListener("click", async () => {
     const tMin = data.daily.temperature_2m_min[0];
     const rain = data.daily.precipitation_sum[0];
     weatherBox.innerHTML = `
-      <p class="fw-bold text-dark m-1">🌡️ Max: ${tMax}°C</p>
-      <p class="fw-bold text-dark m-1">❄️ Min: ${tMin}°C</p>
-      <p class="fw-bold text-dark m-1">🌧️ Niederschlag: ${rain} mm</p>
+      <p class="fw-bold text-dark m-1">Max: ${tMax}°C</p>
+      <p class="fw-bold text-dark m-1">Min: ${tMin}°C</p>
+      <p class="fw-bold text-dark m-1">Niederschlag: ${rain} mm</p>
     `;
   } catch {
-    weatherBox.innerHTML = "<p class='text-danger'>Fehler beim Laden ☁️</p>";
+    weatherBox.innerHTML = "<p class='text-danger'>Fehler beim Laden</p>";
   }
 });
 
@@ -252,3 +252,71 @@ btnStations.addEventListener("click", async () => {
        </div>`;
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// === f) Bewerbungsformular (OHNE fetch, CORS-sicher) ===
+const form = document.getElementById("applicationForm");
+
+if (form) {
+
+  // Mehrfaches Absenden verhindern
+  if (sessionStorage.getItem("applicationSent") === "true") {
+    const btn = form.querySelector("button[type='submit']");
+    btn.disabled = true;
+    btn.innerHTML = "Bereits abgeschickt ✔";
+  }
+
+  form.addEventListener("submit", (e) => {
+
+    if (!form.checkValidity()) {
+      e.preventDefault();
+      form.classList.add("was-validated");
+      return;
+    }
+
+    const btn = form.querySelector("button[type='submit']");
+    btn.disabled = true;
+    btn.innerHTML = "Wird gesendet...";
+
+    sessionStorage.setItem("applicationSent", "true");
+    // KEIN preventDefault → Browser sendet selbst!
+  });
+}

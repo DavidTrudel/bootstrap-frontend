@@ -22,7 +22,7 @@
           <div id="imgBox"
             class="d-flex justify-content-center align-items-center mx-auto border rounded shadow p-2"
             style="width: 320px; height: 250px; background-color: #f8f9fa;">
-            <p class="text-muted m-0">Noch kein Bild 🐾</p>
+            <p class="text-muted m-0">Noch kein Bild</p>
           </div>
 
           <!-- === b) Bitcoin Preis === -->
@@ -43,7 +43,7 @@
           <div id="weatherBox"
             class="d-flex flex-column justify-content-center align-items-center mx-auto border rounded shadow p-3"
             style="width: 320px; height: 180px; background-color: #e8f7ff;">
-            <p class="text-muted m-0">Noch keine Daten ☁️</p>
+            <p class="text-muted m-0">Noch keine Daten</p>
           </div>
 
           <!-- === d) Strom-Tankstellen + e) Karte (ersetzen) === -->
@@ -53,7 +53,7 @@
   <div class="row g-4">
     <!-- links: Liste -->
     <div class="col-md-5">
-      <h3 class="mb-3 text-center">⚡ Nähe (Winterthur)</h3>
+      <h3 class="mb-3 text-center">Nähe (Winterthur)</h3>
       <button id="btn-stations" class="btn btn-primary w-100 mb-3">Tankstellen laden</button>
 
       <div id="stationList" class="list-group" style="max-height:420px; overflow:auto;">
@@ -63,7 +63,7 @@
 
     <!-- rechts: Suche + Karte -->
     <div class="col-md-7">
-      <h3 class="mb-3 text-center">🗺 Karte & Suche</h3>
+      <h3 class="mb-3 text-center">Karte & Suche</h3>
 
       <div class="input-group mb-2">
         <input id="searchInput" type="search" class="form-control" placeholder="Ort oder Adresse suchen...">
@@ -87,6 +87,86 @@
           }
           </style>
 
+
+<!-- === f) Bewerbungsformular === -->
+<hr class="my-5">
+<h2 class="mb-4">Bewerbung Praktikum</h2>
+
+<form id="applicationForm"
+      action="https://webhook.site/18b28d63-72ae-40f6-8625-827d9ceae099"
+      method="POST"
+      enctype="multipart/form-data"
+      class="mx-auto text-start needs-validation"
+      style="max-width: 700px;"
+      novalidate>
+
+  <h5 class="mt-3">Persönliche Angaben</h5>
+
+  <div class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label">Geschlecht</label>
+      <select class="form-select" name="gender" required>
+        <option value="">Bitte wählen</option>
+        <option>Weiblich</option>
+        <option>Männlich</option>
+        <option>Divers</option>
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Vorname</label>
+      <input class="form-control" name="firstname" required>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Name</label>
+      <input class="form-control" name="lastname" required>
+    </div>
+  </div>
+
+  <h5 class="mt-4">Kontakt</h5>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">E-Mail</label>
+      <input type="email" class="form-control" name="email" required>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Handy</label>
+      <input type="tel" class="form-control" name="phone" required>
+    </div>
+  </div>
+
+  <h5 class="mt-4">Bewerbung</h5>
+
+  <div class="mb-3">
+    <label class="form-label">Motivationsschreiben</label>
+    <textarea class="form-control" name="motivation" rows="4" required></textarea>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Lebenslauf (PDF)</label>
+    <input type="file" class="form-control" name="cv" accept="application/pdf" required>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Portfolio (Link)</label>
+    <input type="url" class="form-control" name="portfolio">
+  </div>
+
+  <div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" required>
+    <label class="form-check-label">
+      Ich akzeptiere die
+      <a href="https://www.edoeb.admin.ch" target="_blank">Datenschutzbestimmungen</a>
+    </label>
+  </div>
+
+  <button type="submit" class="btn btn-primary w-100 mb-5">
+    Bewerbung absenden
+  </button>
+</form>
 
 
 
